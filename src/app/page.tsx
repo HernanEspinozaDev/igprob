@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 const IG_USERNAME = "pasteleria.hijitos";
-const IG_WEB_URL = `https://www.instagram.com/${IG_USERNAME}/`;
+const IG_WEB_URL = `https://www.instagram.com/${IG_USERNAME}`;
 
 function InstagramLogo({ className }: { className?: string }) {
   return (
@@ -30,23 +30,35 @@ export default function Home() {
   }, []);
 
   const handleOpenInstagram = (e: React.MouseEvent) => {
-    if (!isMobile) return; // Desktop: let the normal <a href> work
+    // Desktop: let the normal <a href> work
+    if (!isMobile) return;
 
     e.preventDefault();
 
-    // Try to open the Instagram app via deep link
-    const appUrl = `instagram://user?username=${IG_USERNAME}`;
-    const start = Date.now();
-    window.location.href = appUrl;
+    const userAgent =
+      navigator.userAgent || (window as unknown as { opera: string }).opera || "";
+    const isAndroid = /android/i.test(userAgent);
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
 
-    // Fallback: if after 1.5s we're still here, open web version
-    // (if the app opened, the browser loses focus and this won't fire)
-    setTimeout(() => {
-      const end = Date.now();
-      if (end - start < 2500 && !document.hidden) {
-        window.open(IG_WEB_URL, "_blank");
-      }
-    }, 1500);
+    if (isAndroid) {
+      // Android Intent with /_u/ route forces Instagram to open the specific profile
+      // S.browser_fallback_url handles the case where the app isn't installed
+      const androidIntent = `intent://instagram.com/_u/${IG_USERNAME}/#Intent;package=com.instagram.android;scheme=https;S.browser_fallback_url=${encodeURIComponent(IG_WEB_URL)};end`;
+      window.location.href = androidIntent;
+    } else if (isIOS) {
+      // iOS: use instagram:// scheme with manual fallback
+      const iosAppUrl = `instagram://user?username=${IG_USERNAME}`;
+      const start = Date.now();
+      window.location.href = iosAppUrl;
+
+      // If after 1.5s we're still here, the app didn't open — fallback to web
+      setTimeout(() => {
+        const end = Date.now();
+        if (end - start < 2500 && !document.hidden) {
+          window.open(IG_WEB_URL, "_blank");
+        }
+      }, 1500);
+    }
   };
 
   return (
