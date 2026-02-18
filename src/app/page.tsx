@@ -41,10 +41,12 @@ export default function Home() {
     const isAndroid = /android/i.test(userAgent);
 
     if (isAndroid) {
-      // CLEAR_TOP + NEW_TASK (0x14000000) fixes the black screen:
-      // If IG is already open/frozen, it clears all stacked screens and opens the profile fresh.
-      // Using _u/ path with https scheme = IG's universal user router.
-      const androidIntent = `intent://instagram.com/_u/${IG_USERNAME}/#Intent;package=com.instagram.android;scheme=https;launchFlags=0x14000000;S.browser_fallback_url=${IG_WEB_URL};end`;
+      // THE WINNING COMBO: ID + native scheme + action VIEW + clear flags
+      // 1. scheme=instagram (native protocol, not web — avoids Home redirect)
+      // 2. user?id= (numeric ID — exact DB address, no name resolution)
+      // 3. action=VIEW (formal "view content" command)
+      // 4. launchFlags=0x14000000 (NEW_TASK + CLEAR_TOP — kills black screen)
+      const androidIntent = `intent://user?id=${IG_PROFILE_ID}#Intent;package=com.instagram.android;scheme=instagram;action=android.intent.action.VIEW;launchFlags=0x14000000;S.browser_fallback_url=${IG_WEB_URL};end`;
       window.location.href = androidIntent;
     } else {
       // iOS / Others: instagram:// scheme with fallback
