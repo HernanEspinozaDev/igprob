@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 
+const IG_PROFILE_ID = "6981698376";
 const IG_USERNAME = "pasteleria.hijitos";
-const IG_WEB_URL = `https://www.instagram.com/${IG_USERNAME}`;
+const IG_WEB_URL = `https://www.instagram.com/${IG_USERNAME}/`;
 
 function InstagramLogo({ className }: { className?: string }) {
   return (
@@ -41,9 +42,9 @@ export default function Home() {
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
 
     if (isAndroid) {
-      // Android Intent with scheme=https + action=VIEW + /_u/ route
-      // This mimics a verified App Link, forcing Instagram to open the profile directly
-      const androidIntent = `intent://instagram.com/_u/${IG_USERNAME}/#Intent;package=com.instagram.android;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=${IG_WEB_URL};end`;
+      // Android Intent using profile ID (the master key)
+      // Using id= instead of username bypasses name resolution — goes straight to the profile
+      const androidIntent = `intent://user?id=${IG_PROFILE_ID}#Intent;package=com.instagram.android;scheme=instagram;S.browser_fallback_url=${IG_WEB_URL};end`;
       window.location.href = androidIntent;
     } else if (isIOS) {
       // iOS: instagram:// scheme with manual fallback
@@ -51,13 +52,12 @@ export default function Home() {
       const start = Date.now();
       window.location.href = iosAppUrl;
 
-      // If after 1.5s we're still here, the app didn't open
+      // Fallback: if we're still here after 1s, app didn't open
       setTimeout(() => {
-        const end = Date.now();
-        if (end - start < 2000 && !document.hidden) {
+        if (!document.hidden) {
           window.location.href = IG_WEB_URL;
         }
-      }, 1500);
+      }, 1000);
     } else {
       // Other mobile devices
       window.open(IG_WEB_URL, "_blank");
