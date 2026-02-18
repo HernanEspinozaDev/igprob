@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 const IG_USERNAME = "pasteleria.hijitos";
 const IG_WEB_URL = `https://www.instagram.com/${IG_USERNAME}/`;
-const IG_DEEP_LINK = `instagram://user?username=${IG_USERNAME}`;
-const IG_INTENT_LINK = `intent://user?username=${IG_USERNAME}#Intent;package=com.instagram.android;scheme=instagram;end`;
 
 function InstagramLogo({ className }: { className?: string }) {
   return (
@@ -21,39 +19,35 @@ function InstagramLogo({ className }: { className?: string }) {
 }
 
 export default function Home() {
-  const linkRef = useRef<HTMLAnchorElement>(null);
-
-  const handleOpenInstagram = () => {
-    const userAgent = navigator.userAgent || "";
-    const isAndroid = /android/i.test(userAgent);
-    const isIOS = /iphone|ipad|ipod/i.test(userAgent);
-
-    if (isIOS) {
-      // iOS: try deep link, fallback to web
-      window.location.href = IG_DEEP_LINK;
-      setTimeout(() => {
-        window.location.href = IG_WEB_URL;
-      }, 1500);
-    } else if (isAndroid) {
-      // Android: use intent link for best app detection
-      window.location.href = IG_INTENT_LINK;
-    } else {
-      // Desktop: open web
-      window.open(IG_WEB_URL, "_blank");
-    }
-  };
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Auto-redirect on mobile after a short delay
-    const userAgent = navigator.userAgent || "";
-    const isMobile = /android|iphone|ipad|ipod/i.test(userAgent);
-    if (isMobile) {
-      const timer = setTimeout(() => {
-        handleOpenInstagram();
-      }, 1200);
-      return () => clearTimeout(timer);
+    const userAgent =
+      navigator.userAgent || (window as unknown as { opera: string }).opera || "";
+    if (/android|iPad|iPhone|iPod/i.test(userAgent)) {
+      setIsMobile(true);
     }
   }, []);
+
+  const handleOpenInstagram = (e: React.MouseEvent) => {
+    if (!isMobile) return; // Desktop: let the normal <a href> work
+
+    e.preventDefault();
+
+    // Try to open the Instagram app via deep link
+    const appUrl = `instagram://user?username=${IG_USERNAME}`;
+    const start = Date.now();
+    window.location.href = appUrl;
+
+    // Fallback: if after 1.5s we're still here, open web version
+    // (if the app opened, the browser loses focus and this won't fire)
+    setTimeout(() => {
+      const end = Date.now();
+      if (end - start < 2500 && !document.hidden) {
+        window.open(IG_WEB_URL, "_blank");
+      }
+    }, 1500);
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -69,8 +63,8 @@ export default function Home() {
       />
 
       {/* Decorative circles */}
-      <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-br from-pink-500/10 to-purple-500/10 blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-gradient-to-br from-orange-500/10 to-pink-500/10 blur-3xl" />
+      <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-linear-to-br from-pink-500/10 to-purple-500/10 blur-3xl" />
+      <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-linear-to-br from-orange-500/10 to-pink-500/10 blur-3xl" />
 
       {/* Main card */}
       <div
@@ -95,7 +89,7 @@ export default function Home() {
 
         {/* Profile name */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-linear-to-r from-pink-500 via-purple-500 to-orange-500 bg-clip-text text-transparent">
             @{IG_USERNAME}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -103,10 +97,13 @@ export default function Home() {
           </p>
         </div>
 
-        {/* CTA Button */}
-        <button
+        {/* CTA Button — opens IG app on mobile, web on desktop */}
+        <a
+          href={IG_WEB_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           onClick={handleOpenInstagram}
-          className="group relative w-full py-4 px-8 rounded-2xl text-white font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+          className="group relative w-full py-4 px-8 rounded-2xl text-white font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer text-center no-underline"
           style={{
             background:
               "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
@@ -117,17 +114,6 @@ export default function Home() {
             Abrir perfil
           </span>
           <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-        </button>
-
-        {/* Fallback web link */}
-        <a
-          ref={linkRef}
-          href={IG_WEB_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-gray-400 hover:text-pink-500 transition-colors duration-300 underline underline-offset-4"
-        >
-          Abrir en navegador
         </a>
       </div>
     </main>
