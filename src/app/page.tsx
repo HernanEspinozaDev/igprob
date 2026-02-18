@@ -31,7 +31,7 @@ export default function Home() {
   }, []);
 
   const handleOpenInstagram = (e: React.MouseEvent) => {
-    // Desktop: let the normal <a href> work
+    // Desktop: let the normal <a href> work (opens in new tab)
     if (!isMobile) return;
 
     e.preventDefault();
@@ -39,28 +39,22 @@ export default function Home() {
     const userAgent =
       navigator.userAgent || (window as unknown as { opera: string }).opera || "";
     const isAndroid = /android/i.test(userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
 
     if (isAndroid) {
-      // Android Intent using profile ID (the master key)
-      // Using id= instead of username bypasses name resolution — goes straight to the profile
-      const androidIntent = `intent://user?id=${IG_PROFILE_ID}#Intent;package=com.instagram.android;scheme=instagram;S.browser_fallback_url=${IG_WEB_URL};end`;
+      // Android Intent with launchFlags to fix black screen on second tap.
+      // FLAG_ACTIVITY_NEW_TASK (0x10000000): if IG is frozen, restart and bring to front.
+      // Using user_id (numeric) for reliable profile navigation.
+      const androidIntent = `intent://user?user_id=${IG_PROFILE_ID}#Intent;package=com.instagram.android;scheme=instagram;i.launchFlags=0x10000000;S.browser_fallback_url=${IG_WEB_URL};end`;
       window.location.href = androidIntent;
-    } else if (isIOS) {
-      // iOS: instagram:// scheme with manual fallback
-      const iosAppUrl = `instagram://user?username=${IG_USERNAME}`;
-      const start = Date.now();
-      window.location.href = iosAppUrl;
+    } else {
+      // iOS / Others: instagram:// scheme with fallback
+      window.location.href = `instagram://user?username=${IG_USERNAME}`;
 
-      // Fallback: if we're still here after 1s, app didn't open
       setTimeout(() => {
         if (!document.hidden) {
           window.location.href = IG_WEB_URL;
         }
       }, 1000);
-    } else {
-      // Other mobile devices
-      window.open(IG_WEB_URL, "_blank");
     }
   };
 
