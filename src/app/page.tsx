@@ -41,23 +41,26 @@ export default function Home() {
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
 
     if (isAndroid) {
-      // Android Intent with /_u/ route forces Instagram to open the specific profile
-      // S.browser_fallback_url handles the case where the app isn't installed
-      const androidIntent = `intent://instagram.com/_u/${IG_USERNAME}/#Intent;package=com.instagram.android;scheme=https;S.browser_fallback_url=${encodeURIComponent(IG_WEB_URL)};end`;
+      // Android Intent with scheme=https + action=VIEW + /_u/ route
+      // This mimics a verified App Link, forcing Instagram to open the profile directly
+      const androidIntent = `intent://instagram.com/_u/${IG_USERNAME}/#Intent;package=com.instagram.android;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=${IG_WEB_URL};end`;
       window.location.href = androidIntent;
     } else if (isIOS) {
-      // iOS: use instagram:// scheme with manual fallback
+      // iOS: instagram:// scheme with manual fallback
       const iosAppUrl = `instagram://user?username=${IG_USERNAME}`;
       const start = Date.now();
       window.location.href = iosAppUrl;
 
-      // If after 1.5s we're still here, the app didn't open — fallback to web
+      // If after 1.5s we're still here, the app didn't open
       setTimeout(() => {
         const end = Date.now();
-        if (end - start < 2500 && !document.hidden) {
-          window.open(IG_WEB_URL, "_blank");
+        if (end - start < 2000 && !document.hidden) {
+          window.location.href = IG_WEB_URL;
         }
       }, 1500);
+    } else {
+      // Other mobile devices
+      window.open(IG_WEB_URL, "_blank");
     }
   };
 
