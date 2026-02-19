@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-const IG_PROFILE_ID = "6981698376";
 const IG_USERNAME = "pasteleria.hijitos";
 const IG_WEB_URL = `https://www.instagram.com/${IG_USERNAME}/`;
 
@@ -20,113 +19,183 @@ function InstagramLogo({ className }: { className?: string }) {
 }
 
 export default function Home() {
+  const [showModal, setShowModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
-    const userAgent =
+    const ua =
       navigator.userAgent || (window as unknown as { opera: string }).opera || "";
-    if (/android|iPad|iPhone|iPod/i.test(userAgent)) {
-      setIsMobile(true);
-    }
+    const mobile = /android|iPad|iPhone|iPod/i.test(ua);
+    setIsMobile(mobile);
+    if (/android/i.test(ua)) setIsAndroid(true);
   }, []);
 
-  const handleOpenInstagram = (e: React.MouseEvent) => {
-    // Desktop: let the normal <a href> work (opens in new tab)
-    if (!isMobile) return;
-
+  // Step 1: Main button click — opens modal on mobile, web on desktop
+  const handleMainClick = (e: React.MouseEvent) => {
+    if (!isMobile) return; // Desktop: let the <a href> work normally
     e.preventDefault();
+    setShowModal(true);
+  };
 
-    const userAgent =
-      navigator.userAgent || (window as unknown as { opera: string }).opera || "";
-    const isAndroid = /android/i.test(userAgent);
-
+  // Step 2A: User chose "Open in App" — clean user gesture, OS won't block it
+  const handleOpenApp = () => {
     if (isAndroid) {
-      // THE WINNING COMBO: ID + native scheme + action VIEW + clear flags
-      // 1. scheme=instagram (native protocol, not web — avoids Home redirect)
-      // 2. user?id= (numeric ID — exact DB address, no name resolution)
-      // 3. action=VIEW (formal "view content" command)
-      // 4. launchFlags=0x14000000 (NEW_TASK + CLEAR_TOP — kills black screen)
-      const androidIntent = `intent://user?id=${IG_PROFILE_ID}#Intent;package=com.instagram.android;scheme=instagram;action=android.intent.action.VIEW;launchFlags=0x14000000;S.browser_fallback_url=${IG_WEB_URL};end`;
-      window.location.href = androidIntent;
+      // Android: Intent with HTTPS scheme + _u/ path + IG package
+      // Clean user gesture allows the Intent to execute without corruption
+      window.location.href = `intent://instagram.com/_u/${IG_USERNAME}/#Intent;package=com.instagram.android;scheme=https;end`;
     } else {
-      // iOS / Others: instagram:// scheme with fallback
+      // iOS: instagram:// scheme with fallback
       window.location.href = `instagram://user?username=${IG_USERNAME}`;
-
       setTimeout(() => {
         if (!document.hidden) {
           window.location.href = IG_WEB_URL;
         }
-      }, 1000);
+      }, 2500);
     }
+    setShowModal(false);
+  };
+
+  // Step 2B: User chose "Open in Browser"
+  const handleOpenWeb = () => {
+    window.open(IG_WEB_URL, "_blank");
+    setShowModal(false);
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Animated gradient background */}
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          background:
-            "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #833ab4, #5851db, #405de6)",
-          backgroundSize: "400% 400%",
-          animation: "gradient-shift 8s ease infinite",
-        }}
-      />
-
-      {/* Decorative circles */}
-      <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-linear-to-br from-pink-500/10 to-purple-500/10 blur-3xl" />
-      <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-linear-to-br from-orange-500/10 to-pink-500/10 blur-3xl" />
-
-      {/* Main card */}
-      <div
-        className="relative z-10 flex flex-col items-center gap-8 p-10 rounded-3xl backdrop-blur-xl bg-white/80 dark:bg-white/5 border border-white/20 shadow-2xl max-w-sm w-full mx-4"
-        style={{ animation: "fade-in-up 0.8s ease-out" }}
-      >
-        {/* Instagram logo with gradient */}
+    <>
+      <main className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        {/* Animated gradient background */}
         <div
-          className="relative p-5 rounded-2xl"
+          className="absolute inset-0 opacity-20"
           style={{
             background:
-              "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
-            animation: "float 3s ease-in-out infinite",
+              "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888, #833ab4, #5851db, #405de6)",
+            backgroundSize: "400% 400%",
+            animation: "gradient-shift 8s ease infinite",
           }}
+        />
+
+        {/* Decorative circles */}
+        <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-linear-to-br from-pink-500/10 to-purple-500/10 blur-3xl" />
+        <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-linear-to-br from-orange-500/10 to-pink-500/10 blur-3xl" />
+
+        {/* Main card */}
+        <div
+          className="relative z-10 flex flex-col items-center gap-8 p-10 rounded-3xl backdrop-blur-xl bg-white/80 dark:bg-white/5 border border-white/20 shadow-2xl max-w-sm w-full mx-4"
+          style={{ animation: "fade-in-up 0.8s ease-out" }}
         >
-          <InstagramLogo className="w-16 h-16 text-white drop-shadow-lg" />
+          {/* Instagram logo with gradient */}
           <div
-            className="absolute inset-0 rounded-2xl"
-            style={{ animation: "pulse-glow 2s ease-in-out infinite" }}
-          />
-        </div>
+            className="relative p-5 rounded-2xl"
+            style={{
+              background:
+                "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
+              animation: "float 3s ease-in-out infinite",
+            }}
+          >
+            <InstagramLogo className="w-16 h-16 text-white drop-shadow-lg" />
+            <div
+              className="absolute inset-0 rounded-2xl"
+              style={{ animation: "pulse-glow 2s ease-in-out infinite" }}
+            />
+          </div>
 
-        {/* Profile name */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold bg-linear-to-r from-pink-500 via-purple-500 to-orange-500 bg-clip-text text-transparent">
-            @{IG_USERNAME}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Síguenos en Instagram
-          </p>
-        </div>
+          {/* Profile name */}
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-bold bg-linear-to-r from-pink-500 via-purple-500 to-orange-500 bg-clip-text text-transparent">
+              @{IG_USERNAME}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Síguenos en Instagram
+            </p>
+          </div>
 
-        {/* CTA Button — opens IG app on mobile, web on desktop */}
-        <a
-          href={IG_WEB_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleOpenInstagram}
-          className="group relative w-full py-4 px-8 rounded-2xl text-white font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer text-center no-underline"
-          style={{
-            background:
-              "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
-          }}
+          {/* CTA Button — opens modal on mobile, web on desktop */}
+          <a
+            href={IG_WEB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleMainClick}
+            className="group relative w-full py-4 px-8 rounded-2xl text-white font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer text-center no-underline"
+            style={{
+              background:
+                "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
+            }}
+          >
+            <span className="relative z-10 flex items-center justify-center gap-3">
+              <InstagramLogo className="w-5 h-5" />
+              Abrir perfil
+            </span>
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
+          </a>
+        </div>
+      </main>
+
+      {/* Bridge Modal — clean user gesture for deep linking */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowModal(false)}
         >
-          <span className="relative z-10 flex items-center justify-center gap-3">
-            <InstagramLogo className="w-5 h-5" />
-            Abrir perfil
-          </span>
-          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-        </a>
-      </div>
-    </main>
+          <div
+            className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-sm w-full p-8 border border-gray-200 dark:border-gray-800"
+            style={{ animation: "fade-in-up 0.3s ease-out" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <div
+                className="p-3 rounded-xl"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)",
+                }}
+              >
+                <InstagramLogo className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Abrir @{IG_USERNAME}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                ¿Cómo quieres ver nuestro perfil?
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-3">
+              {/* Open in App */}
+              <button
+                onClick={handleOpenApp}
+                className="w-full py-4 px-4 rounded-2xl text-white font-semibold flex items-center justify-center gap-3 active:scale-95 transition-transform cursor-pointer"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #833ab4, #dc2743, #f09433)",
+                }}
+              >
+                <InstagramLogo className="w-5 h-5" />
+                Abrir en la App
+              </button>
+
+              {/* Open in Browser */}
+              <button
+                onClick={handleOpenWeb}
+                className="w-full py-4 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-medium rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                Continuar en el navegador
+              </button>
+            </div>
+
+            {/* Cancel */}
+            <button
+              onClick={() => setShowModal(false)}
+              className="mt-5 text-xs text-gray-400 w-full text-center hover:underline cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
